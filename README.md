@@ -4,45 +4,37 @@ Being a heavy operation the suggestion is to optimize the API usage.
 In this project with usage of sql we try to obtain insights for a user compared to other users.
 
 Limitations:
-Initially we will support insights for week, month, quarterly, half yearly and yearly.
-If needed the solution can be extended to specific days as well.
-
 Not considering the timezones in this solution. Assuming the whole deployment setup is different in every region.
+Not allowing the hourly insights for user. Only considering the full day.
 
 Solution:
-We will have a new table that stores the sum of amount each user spends at each merchant.
-The table will be dd-mm-yyyy(id, user_id, merchantId, total_amount)
+Proposing a solution using sql window functions with over and partition by to obtain the required insights. With these we have prevented using unwanted multiple evaluations.
 
-The table can be created in two ways:
-Create asynchronously at 00:00:00 hrs, with this the table is readily availble and can be used accordingly.
-or when a new event is received for the day. 
+With this query the data is segmented into partitions per merchant and the percentile is calculated reducing the hassle of counting.
 
-Example:
-If a user spends 100euro at Pizzahut 3 times in a day. The transactions table will have 3 entries in the DB.
-The daily table will have an entry with user_1, merchant_123, 300euro
+Indexes: we index transaction table with user_id, merchant_id and date to speed up the query operations, though it takes up decent amount of space. Storage is anyway a lot cheaper these days.
+
+Advised to run batch jobs to pre-compute weekly, monthly etc. insights for user.
+
+This API does not return the merchant details apart from id, the apps can query for the data using its own individual API.
+
+Alternative Solution:
+Creation of daily transaction tables that store sum of amount transacted by user at a merchant. But this will need multiple joins during the computation of user insights.
+
+How to run:
+This project is dockerized, leaving out the whole pain process.
 
 
-We use a single queue here as we do not have to re-subscribe to following days events.
-Every event will contain the date so that it can be routed to its corresponsing table, on failure of events 
-these events will not be lost and can be re-queued to evaluation.
+clone this repo.
+To the terminal:
+cd Emma-App
+docker-compose up
 
-RabbitMQ/SNS/Pub-sub model:
-Every transction is posted into an event queue.
-The api that inserts into the transactions table will be producer and consumer will insert the data into the daily table.
-On a race condition with table creation and event we retry failed events 2-3 times to overcome the scenario.
+to the browser:
+open http://localhost:3000/api-docs/# 
+you can execute the API here, very little amount of data is preloaded into the db.
+Available userIids: 1,2,3,4
+available merchant_ids: 1,2
+transactions are inserted for 2021-11-07 to 2021-11-08
 
-Weekly Insights will be shown to user on every Monday, monthly insights at the end of each month similarly for quartery, half yearly and annually. The data for weeks, months etc.. will be generated in cron jobs that run in the background. We can choose when to clean up the daily/weekly/monlty tables as the time passes by.
-
-SQL does not have a limit of number of tables we can have in a DB. Levereging that, the insights will be always obtained with 
-a few joins and aggregations. Consumes less memory and maintaining the speed of the API as well. None of thee API's are blocked and 
-the insights can be obtained with minimal memory/resource usage.
-
-Pagination should be used to restrict the number of merchants to be considered per request.
-
-What to expect from the assignment:
-The solution here implemented with event driven architecture as shown below. 
-The data is preloaded into the daily tables for the current week i.e. from 7th to 11th of November.
-The api will calculate insights from these tables.
-The pub/sub model is implemented and a table will be created when first event is received for simplicity.
-API to add a transction is provided.
-# typescript-express-starter
+The API returns percentile in decimals which can be used as per the need of the API requester.
