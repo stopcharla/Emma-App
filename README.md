@@ -10,11 +10,11 @@ Not allowing the hourly insights for user. Only considering the full day.
 Solution:
 Proposing a solution using sql window functions with over and partition by to obtain the required insights. With these we have prevented using unwanted multiple evaluations.
 
-With this query the data is segmented into partitions per merchant and the percentile is calculated reducing the hassle of counting.
+With this query the data is segmented into partitions per merchant and the percentile is calculated reducing the hassle of counting. The usage of joins and counts are heavy operations in SQL which we successfuly did avoid. 
 
-Indexes: we index transaction table with user_id, merchant_id and date to speed up the query operations, though it takes up decent amount of space. Storage is anyway a lot cheaper these days.
+Indexes: we index transaction table with user_id, merchant_id and date to speed up the query operations, though it takes up decent amount of space. Storage is anyway a lot cheaper these days. These exactly add indexes for fields we are querying on hence reducing logical reads and improving performance.
 
-Advised to run batch jobs to pre-compute weekly, monthly etc. insights for user.
+Advised to run batch jobs to store the total amount spent by user at a merchant for a cummulative period of time may it be week, month or half year. So that we do not overload this API for data for a big time range.
 
 This API does not return the merchant details apart from id, the apps can query for the data using its own individual API.
 
