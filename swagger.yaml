@@ -1,0 +1,38 @@
+tags:
+- name: users
+  description: users API
+
+paths:
+# [GET] users/id
+  /userInsights:
+    get:
+      tags:
+      - insights
+      summary: Find insights for user given a date range
+      parameters:
+      - name: userId
+        in: query
+        description: User Id
+        required: true
+        type: integer
+      - name: from
+        in: query
+        description: From date range (yyyy-mm-dd) 00:00:00 
+        required: true
+        type: string
+      - name: to
+        in: query
+        description: To date range (yyyy-mm-dd) 23:59:59
+        required: true
+        type: string
+      responses:
+        200:
+          description: 'OK'
+        409:
+          description: 'Conflict'
+        500:
+          description: 'Server Error'
+
+schemes:
+ - https
+ - http

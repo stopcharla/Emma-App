@@ -1,0 +1,47 @@
+version: '3.7'
+
+services:
+  server:
+    build:
+      context: ./
+      target: development-build-stage
+      dockerfile: Dockerfile
+    container_name: server
+    ports:
+      - '3000:3000'
+    environment:
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: emma
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    restart: 'unless-stopped'
+    networks:
+      - backend
+    links:
+      - mysql
+    depends_on:
+      - mysql
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_USER: root
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: emma
+    ports:
+      - '3306:3306'
+    networks:
+      - backend
+    volumes:
+      - "./scripts/seed.sql:/docker-entrypoint-initdb.d/1.sql"
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  data:
+    driver: local
